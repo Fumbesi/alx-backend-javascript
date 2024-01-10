@@ -29,3 +29,27 @@ const teacher3 = new TeacherClass('John', 'Doe', false, 'London', {
 });
 
 console.log(teacher3);
+
+interface Teacher {
+  firstName: string;
+  lastName: string;
+  readonly fullTimeEmployee: boolean;
+  yearsOfExperience?: number;
+  location: string;
+  [key: string]: any; // Allow any additional attribute
+}
+
+interface Directors extends Teacher {
+  numberOfReports: number;
+}
+
+// Example usage
+const director1: Directors = {
+  firstName: 'John',
+  lastName: 'Doe',
+  fullTimeEmployee: true,
+  location: 'London',
+  numberOfReports: 17,
+};
+
+console.log(director1);
