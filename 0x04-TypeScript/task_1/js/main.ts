@@ -53,3 +53,17 @@ const director1: Directors = {
 };
 
 console.log(director1);
+
+interface printTeacherFunction {
+  (firstName: string, lastName: string): string;
+}
+
+const printTeacher: printTeacherFunction = (firstName, lastName) => {
+  const firstLetter = firstName.charAt(0).toUpperCase();
+  const fullLastName = lastName.charAt(0).toUpperCase() + lastName.slice(1);
+  return `${firstLetter}. ${fullLastName}`;
+};
+
+// Example usage
+const result = printTeacher('John', 'Doe');
+console.log(result); // Output: J. Doe
