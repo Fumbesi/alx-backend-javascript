@@ -1,38 +1,65 @@
-// 7-http_express.js
-
 const express = require('express');
-const countStudents = require('./3-read_file_async');
+const { readFile } = require('fs');
 
 const app = express();
+const port = 1245;
 
-// Set up a route for the root endpoint
+function countStudents (path) {
+  const students = {};
+  return new Promise((resolve, reject) => {
+    readFile(path, (err, data) => {
+      const results = [];
+      if (err) {
+        reject(Error('Cannot load the database'));
+      } else {
+        const content = data.toString().trim();
+        const lines = content.split('\n');
+        let length = 0;
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].toString();
+          if (!line) continue;
+          const values = line.split(',');
+          const field = values[3].trim();
+          const firstname = values[0].trim();
+
+          if (field === 'field') continue;
+          if (students[field] !== undefined) {
+            students[field].push(firstname);
+          } else {
+            students[field] = [firstname];
+          }
+          length++;
+        }
+        results.push(`Number of students: ${length}`);
+        for (const field in students) {
+          const names = students[field];
+          results.push(
+            `Number of students in ${field}: ${
+              names.length
+            }. List: ${names.join(', ')}`,
+          );
+        }
+        resolve(results.join('\n'));
+      }
+    });
+  });
+}
+
 app.get('/', (req, res) => {
-  res.send('Hello Holberton School!\n');
+  res.send('Hello Holberton School!');
 });
 
-// Set up a route for the /students endpoint
 app.get('/students', (req, res) => {
-  // Get the database file name from command line arguments
-  const [, , databaseFileName] = process.argv;
-
-  // Call the countStudents function with the database file name
-  countStudents(databaseFileName)
-    .then(() => {
-      // This is the list of our students
-      res.send('This is the list of our students\n');
+  const path = process.argv[2].toString();
+  countStudents(path)
+    .then(data => {
+      res.send(`This is the list of our students\n${data.toString().trim()}`);
     })
-    .catch((error) => {
-      // Log the error if there's an issue reading the database
-      console.error(error.message);
-      res.status(500).send('Internal Server Error\n');
+    .catch(err => {
+      res.send('This is the list of our students\nCannot load the database');
     });
 });
 
-// Listen on port 1245
-const server = app.listen(1245, () => {
-  console.log('Server is listening on port 1245');
-});
+app.listen(port, () => {});
 
-// Export the app for external use
 module.exports = app;
-
