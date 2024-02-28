@@ -7,13 +7,12 @@ const rl = readline.createInterface({
   output: process.stdout
 });
 
-console.log('Welcome to Holberton School, what is your name?');
+console.log("Welcome to Holberton School, what is your name?");
 
 rl.on('line', (name) => {
   console.log(`Your name is: ${name}`);
+  console.log("This important software is now closing");
   rl.close();
 });
 
-rl.on('close', () => {
-  console.log('This important software is now closing');
-});
+module.exports = rl;
