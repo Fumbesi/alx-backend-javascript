@@ -1,65 +1,70 @@
 const express = require('express');
-const { readFile } = require('fs');
+const fs = require('fs');
 
 const app = express();
-const port = 1245;
-
-function countStudents (path) {
-  const students = {};
-  return new Promise((resolve, reject) => {
-    readFile(path, (err, data) => {
-      const results = [];
-      if (err) {
-        reject(Error('Cannot load the database'));
-      } else {
-        const content = data.toString().trim();
-        const lines = content.split('\n');
-        let length = 0;
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i].toString();
-          if (!line) continue;
-          const values = line.split(',');
-          const field = values[3].trim();
-          const firstname = values[0].trim();
-
-          if (field === 'field') continue;
-          if (students[field] !== undefined) {
-            students[field].push(firstname);
-          } else {
-            students[field] = [firstname];
-          }
-          length++;
-        }
-        results.push(`Number of students: ${length}`);
-        for (const field in students) {
-          const names = students[field];
-          results.push(
-            `Number of students in ${field}: ${
-              names.length
-            }. List: ${names.join(', ')}`,
-          );
-        }
-        resolve(results.join('\n'));
-      }
-    });
-  });
-}
 
 app.get('/', (req, res) => {
   res.send('Hello Holberton School!');
 });
 
+function countStudents(path) {
+  return new Promise((res, rej) => {
+    fs.readFile(path, 'utf8', (err, data) => {
+      if (err) {
+        rej(new Error('Cannot load the database'));
+      } else {
+        let minus = 1;
+        let result = '\n';
+        // eslint-disable-next-line no-param-reassign
+        data = data.split('\n');
+        const fieldlist = {};
+        for (let i = 1; i < data.length; i += 1) {
+          const firstName = data[i].split(',')[0];
+          const field = data[i].split(',')[3];
+          if (!Object.prototype.hasOwnProperty.call(fieldlist, field)) {
+            if (field === undefined) {
+              minus += 1;
+              // eslint-disable-next-line no-continue
+              continue;
+            }
+            fieldlist[field] = [];
+          }
+          fieldlist[field].push(firstName);
+        }
+        result += `Number of students: ${data.length - minus}\n`;
+        let i = 0;
+        // eslint-disable-next-line guard-for-in
+        for (const key in fieldlist) {
+          if (Object.prototype.hasOwnProperty.call(fieldlist, key)) {
+            result += `Number of students in ${key}: ${fieldlist[key].length}. List: ${fieldlist[key].join(', ')}`;
+          }
+          // eslint-disable-next-line no-continue
+          if (i === 1) continue;
+          result += '\n';
+          i += 1;
+        }
+        res(result);
+      }
+    });
+  });
+}
 app.get('/students', (req, res) => {
-  const path = process.argv[2].toString();
-  countStudents(path)
-    .then(data => {
-      res.send(`This is the list of our students\n${data.toString().trim()}`);
+  countStudents(process.argv[2])
+    .then((result) => {
+      // eslint-disable-next-line no-param-reassign
+      result = `This is the list of our students${result}`;
+      res.send(result);
     })
-    .catch(err => {
-      res.send('This is the list of our students\nCannot load the database');
+    .catch((err) => {
+      // eslint-disable-next-line no-param-reassign
+      err = String(err);
+      // eslint-disable-next-line no-param-reassign
+      err = err.replace('Error: ', '');
+      const re = `This is the list of our students\n${err}`;
+      res.send(re);
     });
 });
 
-app.listen(port, () => {});
+app.listen(1245);
 
 module.exports = app;
