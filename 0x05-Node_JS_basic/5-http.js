@@ -1,69 +1,65 @@
 const http = require('http');
-const { readFile } = require('fs');
+const fs = require('fs');
 
-const port = 1245;
-const host = '127.0.0.1';
-
-function countStudents (path) {
-  const students = {};
-  return new Promise((resolve, reject) => {
-    readFile(path, (err, data) => {
-      const results = [];
+function countStudents(path) {
+  return new Promise((res, rej) => {
+    fs.readFile(path, 'utf8', (err, data) => {
       if (err) {
-        reject(Error('Cannot load the database'));
+        rej(new Error('Cannot load the database'));
       } else {
-        const content = data.toString().trim();
-        const lines = content.split('\n');
-        let length = 0;
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i].toString();
-          if (!line) continue;
-          const values = line.split(',');
-          const field = values[3].trim();
-          const firstname = values[0].trim();
-
-          if (field === 'field') continue;
-          if (students[field] !== undefined) {
-            students[field].push(firstname);
-          } else {
-            students[field] = [firstname];
+        let minus = 1;
+        let result = '\n';
+        // eslint-disable-next-line no-param-reassign
+        data = data.split('\n');
+        const fieldlist = {};
+        for (let i = 1; i < data.length; i += 1) {
+          const firstName = data[i].split(',')[0];
+          const field = data[i].split(',')[3];
+          if (!Object.prototype.hasOwnProperty.call(fieldlist, field)) {
+            if (field === undefined) {
+              minus += 1;
+              // eslint-disable-next-line no-continue
+              continue;
+            }
+            fieldlist[field] = [];
           }
-          length++;
+          fieldlist[field].push(firstName);
         }
-        results.push(`Number of students: ${length}`);
-        for (const field in students) {
-          const names = students[field];
-          results.push(
-            `Number of students in ${field}: ${
-              names.length
-            }. List: ${names.join(', ')}`,
-          );
+        result += `Number of students: ${data.length - minus}\n`;
+        let i = 0;
+        // eslint-disable-next-line guard-for-in
+        for (const key in fieldlist) {
+          if (Object.prototype.hasOwnProperty.call(fieldlist, key)) {
+            result += `Number of students in ${key}: ${fieldlist[key].length}. List: ${fieldlist[key].join(', ')}`;
+          }
+          // eslint-disable-next-line no-continue
+          if (i === 1) continue;
+          result += '\n';
+          i += 1;
         }
-        resolve(results.join('\n'));
+        res(result);
       }
     });
   });
 }
-const app = http.createServer((req, res) => {
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'text/plain');
+
+module.exports = http.createServer((req, res) => {
   if (req.url === '/') {
     res.end('Hello Holberton School!');
-  }
-  if (req.url === '/students') {
-    res.write('This is the list of our students\n');
-    const path = process.argv[2].toString();
-
-    countStudents(path)
-      .then(data => {
-        res.end(data.toString().trim());
+  } else if (req.url === '/students') {
+    res.write('This is the list of our students');
+    countStudents(process.argv[2])
+      .then((result) => {
+        res.statusCode = 200;
+        res.end(result);
       })
-      .catch(err => {
-        res.statusCode = 500;
-        res.end('Cannot load the database');
+      .catch((err) => {
+        // eslint-disable-next-line no-param-reassign
+        err = String(err);
+        // eslint-disable-next-line no-param-reassign
+        err = err.replace('Error: ', '');
+        const re = `\n${err}`;
+        res.end(re);
       });
   }
-});
-
-app.listen(port, host, () => {});
-module.exports = app;
+}).listen(1245);
