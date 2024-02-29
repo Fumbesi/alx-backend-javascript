@@ -1,37 +1,32 @@
-const { readFileSync } = require('fs');
 
-function countStudents (path) {
-  const students = {};
+const fs = require('fs');
+
+module.exports = function countStudents(path) {
   try {
-    const content = readFileSync(path).toString().trim();
-    const lines = content.split('\n');
-    let length = 0;
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].toString();
-      if (!line) continue;
-      const values = line.split(',');
-      const field = values[3].trim();
-      const firstname = values[0].trim();
-
-      if (field === 'field') continue;
-      if (students[field] !== undefined) {
-        students[field].push(firstname);
-      } else {
-        students[field] = [firstname];
+    let minus = 1;
+    let data = fs.readFileSync(path, 'utf8');
+    data = data.split('\n');
+    const fieldlist = {};
+    for (let i = 1; i < data.length; i += 1) {
+      const firstName = data[i].split(',')[0];
+      const field = data[i].split(',')[3];
+      if (!Object.prototype.hasOwnProperty.call(fieldlist, field)) {
+        if (field === undefined) {
+          minus += 1;
+          // eslint-disable-next-line no-continue
+          continue;
+        }
+        fieldlist[field] = [];
       }
-      length++;
+      fieldlist[field].push(firstName);
     }
-    console.log(`Number of students: ${length}`);
-    for (const field in students) {
-      const names = students[field];
-      console.log(
-        `Number of students in ${field}: ${names.length}. List: ${names.join(
-          ', ',
-        )}`,
-      );
+    console.log(`Number of students: ${data.length - minus}`);
+    for (const key in fieldlist) {
+      if (Object.prototype.hasOwnProperty.call(fieldlist, key)) {
+        console.log(`Number of students in ${key}: ${fieldlist[key].length}. List: ${fieldlist[key].join(', ')}`);
+      }
     }
   } catch (err) {
-    throw Error('Cannot load the database');
+    throw new Error('Cannot load the database');
   }
-}
-module.exports = countStudents;
+};
